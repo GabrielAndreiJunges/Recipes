@@ -2,16 +2,19 @@ from urllib.request import Request
 from django.shortcuts import render
 from django.http import HttpResponse
 
+from utils.recipes.factory import make_recipe
+
 # Create your views here.
 
 
 def home(request):
     return render(request, 'recipes/pages/home.html', context={
-        'name': 'Luiz Otávio',
+        'recipes': [make_recipe() for _ in range(10)],
     })
 
 
 def recipes(request, id):
     return render(request, 'recipes/pages/recipe-view.html', context={
-        'name': 'Luiz Otávio', 'id': id
+        'recipe': make_recipe(),
+        'is_detail_page': True,
     })
