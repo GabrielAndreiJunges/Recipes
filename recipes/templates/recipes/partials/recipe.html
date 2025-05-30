@@ -74,7 +74,10 @@
     </footer>
     {% else %}
     <div class="preparation-steps">
-        <p>{{ recipe.preparation_steps|linebreaksbr }}</p>
+        {% if preparation_steps_is_html == True %}
+            <p>{{ recipe.preparation_steps|safe }}</p>
+        {% endif %}
+            <p>{{ recipe.preparation_steps|linebreaksbr }}</p>
     </div>
     {% endif %}
 </div>
