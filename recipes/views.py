@@ -1,26 +1,19 @@
-from django.core.paginator import Paginator
 from django.http import Http404
 from django.db.models import Q
 from django.shortcuts import render, get_list_or_404, get_object_or_404
 
-from utils.recipes.pagination import make_pagination_range
+from utils.recipes.pagination import make_pagination
 from .models import Recipe
+
+PER_PAGES = 3
 
 # Create your views here.
 
 
 def home(request):
     recipes = Recipe.objects.filter(is_published=True).order_by('-id')
-
-    try:
-        current_page = int(request.GET.get('page', 1))
-    except ValueError:
-        current_page = 1
-    paginator = Paginator(recipes, 3)
-    page_object = paginator.get_page(current_page)
-
-    pagination_range = make_pagination_range(
-        paginator.page_range, 4, current_page)
+    page_object, pagination_range = make_pagination(
+        request, recipes, PER_PAGES)
 
     return render(request, 'recipes/pages/home.html', context={
         'recipes': page_object,
@@ -32,8 +25,12 @@ def category(request, category_id):
     recipes = get_list_or_404(
         Recipe.objects.filter(category__id=category_id, is_published=True,).order_by('-id'))
 
+    page_object, pagination_range = make_pagination(
+        request, recipes, PER_PAGES)
+
     return render(request, 'recipes/pages/category.html', context={
-        'recipes': recipes,
+        'recipes': page_object,
+        'pagination_range': pagination_range,
         'title': f'{recipes[0].category.name} - Category | '  # type: ignore
     })
 
@@ -55,14 +52,17 @@ def search(request):
 
     recipes = Recipe.objects.filter(
         Q(Q(title__icontains=search_term) |
-          Q(description__icontains=search_term))
-    )
+          Q(description__icontains=search_term)),
+        is_published=True
+    ).order_by('-id')
 
-    recipes = recipes.filter(is_published=True)
-    recipes = recipes.order_by('-id')
+    page_object, pagination_range = make_pagination(
+        request, recipes, PER_PAGES)
 
     return render(request, 'recipes/pages/search.html', {
         'page_title': f'Search for "{search_term}"',
         'search_term': search_term,
-        'recipes': recipes,
+        'recipes': page_object,
+        'pagination_range': pagination_range,
+        'additional_url_query': f'&q={search_term}',
     })
